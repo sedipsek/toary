@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>오늘 하루 기록장</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 구글 폰트 사용 -->
+  <link href="https://fonts.googleapis.com/css2?family=Sunflower:wght@500&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(120deg, #fdf6e3 0%, #a8edea 100%);
+      font-family: 'Sunflower', 'Montserrat', 'sans-serif';
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .diary-box {
+      background: rgba(255,255,255,0.88);
+      border-radius: 2rem;
+      box-shadow: 0 4px 28px rgba(110, 160, 150, 0.16);
+      padding: 2.2rem 2.5rem 1.2rem 2.5rem;
+      max-width: 370px;
+      width: 90vw;
+      animation: fadeIn 1.2s cubic-bezier(.37,1.14,.88,1) 1;
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: translateY(25px);}
+      100% { opacity: 1; transform: none;}
+    }
+    .title {
+      text-align: center;
+      font-size: 2.1rem;
+      color: #95c2a7;
+      letter-spacing: 0.7px;
+      font-weight: bold;
+      margin-bottom: 2rem;
+    }
+    .emoji-select {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+    }
+    .emoji-option {
+      cursor: pointer;
+      margin: 0 10px;
+      transition: transform 0.18s;
+      filter: grayscale(60%);
+      opacity: 0.7;
+      user-select: none;
+    }
+    .emoji-option.selected {
+      transform: scale(1.22);
+      filter: grayscale(0%);
+      opacity: 1;
+      text-shadow: 0 4px 18px #e8e9ec55;
+    }
+    .label {
+      font-size: 1.03rem;
+      color: #84a9ac;
+      margin-bottom: 0.5rem;
+      margin-left: 2px;
+      display: block;
+    }
+    .memo-input {
+      width: 100%;
+      border: none;
+      border-radius: 1rem;
+      background: #f8fafb;
+      box-shadow: 0 2px 10px #c8edea0a;
+      padding: 1.1rem 1rem 0.9rem 1rem;
+      font-size: 1.05rem;
+      font-family: inherit;
+      outline: none;
+      resize: none;
+      margin-bottom: 1.3rem;
+      transition: box-shadow 0.17s;
+    }
+    .memo-input:focus {
+      box-shadow: 0 2px 20px #a8edea25;
+      background: #eefcfb;
+    }
+    .save-btn {
+      display: block;
+      margin: 0 auto;
+      padding: 0.72rem 2.5rem;
+      border: none;
+      border-radius: 1.2rem;
+      background: linear-gradient(90deg, #a8edea 20%, #fed6e3 100%);
+      color: #507d6a;
+      font-size: 1.12rem;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      box-shadow: 0 2px 12px #c8edea55;
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s;
+    }
+    .save-btn:active {
+      background: #f1ece8;
+      color: #649173;
+    }
+    .history {
+      margin-top: 2.2rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid #e3f6f5;
+      max-height: 190px;
+      overflow-y: auto;
+      font-size: 1rem;
+    }
+    .history-entry {
+      margin-bottom: 1rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px dashed #e9eaea33;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      animation: fadeInEntry 0.8s;
+    }
+    @keyframes fadeInEntry {
+      from { opacity: 0; transform: translateY(18px);}
+      to { opacity: 1; transform: none;}
+    }
+    .history-emoji {
+      font-size: 1.35rem;
+    }
+    .history-memo {
+      flex: 1;
+      color: #4d6658;
+      font-size: 0.98rem;
+    }
+    .history-date {
+      font-size: 0.88rem;
+      color: #a5bfb6;
+      margin-top: 2px;
+    }
+    @media (max-width: 600px) {
+      .diary-box {
+        padding: 1.2rem 0.5rem 1rem 0.5rem;
+        max-width: 97vw;
+      }
+      .title { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="diary-box">
+    <div class="title">오늘 하루 기록장</div>
+    <form id="diary-form" autocomplete="off">
+      <div class="label">오늘의 기분</div>
+      <div class="emoji-select" id="emoji-select">
+        <span class="emoji-option" data-emoji="😀">😀</span>
+        <span class="emoji-option" data-emoji="😐">😐</span>
+        <span class="emoji-option" data-emoji="🥲">🥲</span>
+        <span class="emoji-option" data-emoji="😡">😡</span>
+        <span class="emoji-option" data-emoji="🥳">🥳</span>
+      </div>
+      <div class="label">짧은 메모</div>
+      <textarea id="memo-input" class="memo-input" maxlength="80" rows="2" placeholder="오늘을 한마디로 남겨보세요"></textarea>
+      <button type="submit" class="save-btn">저장하기</button>
+    </form>
+    <div class="history" id="history"></div>
+  </div>
+  <script>
+    // 감정 이모지 선택
+    const emojiSelect = document.getElementById('emoji-select');
+    let selectedEmoji = null;
+    emojiSelect.addEventListener('click', (e) => {
+      if (e.target.classList.contains('emoji-option')) {
+        document.querySelectorAll('.emoji-option').forEach(el => el.classList.remove('selected'));
+        e.target.classList.add('selected');
+        selectedEmoji = e.target.getAttribute('data-emoji');
+      }
+    });
+
+    // 저장 및 히스토리 표시
+    const form = document.getElementById('diary-form');
+    const memoInput = document.getElementById('memo-input');
+    const historyDiv = document.getElementById('history');
+    let history = [];
+
+    // 저장된 기록 로드(로컬스토리지)
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('myDiary');
+      if (saved) {
+        history = JSON.parse(saved);
+        renderHistory();
+      }
+    });
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const memo = memoInput.value.trim();
+      if (!selectedEmoji || !memo) {
+        alert('기분과 메모를 모두 입력해주세요!');
+        return;
+      }
+      const entry = {
+        emoji: selectedEmoji,
+        memo: memo,
+        date: new Date().toLocaleDateString("ko-KR", {year:"numeric", month:"2-digit", day:"2-digit"})
+      };
+      history.unshift(entry);
+      localStorage.setItem('myDiary', JSON.stringify(history));
+      renderHistory();
+      memoInput.value = '';
+      document.querySelectorAll('.emoji-option').forEach(el => el.classList.remove('selected'));
+      selectedEmoji = null;
+    });
+
+    function renderHistory() {
+      historyDiv.innerHTML = history.length
+        ? history.map(entry => `
+          <div class="history-entry">
+            <div class="history-emoji">${entry.emoji}</div>
+            <div>
+              <div class="history-memo">${entry.memo}</div>
+              <div class="history-date">${entry.date}</div>
+            </div>
+          </div>
+        `).join('')
+        : `<div style="color:#baccc6;text-align:center;">기록이 없습니다</div>`;
+    }
+  </script>
+</body>
+</html>
